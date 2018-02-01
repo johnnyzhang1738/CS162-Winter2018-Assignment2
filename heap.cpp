@@ -85,6 +85,10 @@ obj_ptr Heap::get_root(const std::string& name) {
   return root->second;
 }
 
+object_type Heap::get_object_type(obj_ptr ptr) {
+  return *reinterpret_cast<object_type*>(from + ptr);
+}
+
 // Finds fields by path / name; used by get() and set().
 obj_ptr *Heap::get_nested(const std::vector<std::string>& path) {
   obj_ptr init = get_root(path[0]);
