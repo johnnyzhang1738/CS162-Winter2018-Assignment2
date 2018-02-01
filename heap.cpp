@@ -59,7 +59,7 @@ void Heap::collect() {
   	if (current_obj_address > heap_size/2){
   		break; // stop when obj_pointer has a memory address greater than halfway point
   	}
-  	
+
 
 
 
