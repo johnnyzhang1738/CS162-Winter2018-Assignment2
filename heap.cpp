@@ -30,14 +30,47 @@ void Heap::debug() {
 // enough memory. If there is still insufficient memory after garbage collection,
 // this method should throw an out_of_memory exception.
 obj_ptr Heap::allocate(int32_t size) {
-  // Implement me
+    // check we have space on heap
+	//if we don't, call collect()
+	int32_t triggered_point = heap_size/2;
+	if (bump_ptr + size > triggered_point){
+		collect();
+	}
+	//check we have space on heap AGAIN
+	//if we still don't have space, we're out of memory
+	if (bump_ptr + size > triggered_point){
+		throw OutOfMemoryException(); 
+	}
+	//otherwise, we do have space to allocate...
+	int32_t bump_before_allocation = bump_ptr;
+	bump_ptr += size; // increment bump pointer by size allocated
+	
+	
+	return bump_before_allocation;
 }
 
 // This method should implement the actual semispace garbage collection.
 // As a final result this method *MUST* call print();
 void Heap::collect() {
-  // Implement me
+  int32_t current_mem = from;
+  for (std::map<std::string, obj_ptr>::iterator iter = root_set.begin(); iter != root_set.end(); ++iter){
+  	std::string var_name = iter->first;
+  	current_obj_address = iter->second;
+  	if (current_obj_address > heap_size/2){
+  		break; // stop when obj_pointer has a memory address greater than halfway point
+  	}
+  	
 
+
+
+  }
+  
+	// at the very end, we need to swap from and to labels...
+  /*
+	int32_t temp = from;
+	from = to;
+	to = temp;
+  */
   // Please do not remove the call to print, it has to be the final
   // operation in the method for your assignment to be graded.
   print();
