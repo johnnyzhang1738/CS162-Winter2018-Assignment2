@@ -20,7 +20,7 @@ Heap::~Heap() {
 // debugging tool. It's called whenever the DEBUG command is found
 // in the input program.
 void Heap::debug() {
-  // Implement me
+  
 }
 
 // The allocate method allocates a chunk of memory of given size.
@@ -34,43 +34,77 @@ obj_ptr Heap::allocate(int32_t size) {
 	//if we don't, call collect()
 	int32_t triggered_point = heap_size/2;
 	if (bump_ptr + size > triggered_point){
+    //RESET BUMP POINTER
+    //bump_ptr = *to;
+    bump_ptr = heap_size/2;
+    //TODO: PLEASE FOR THE LOVE OF GOD CHANGE THIS
 		collect();
 	}
 	//check we have space on heap AGAIN
 	//if we still don't have space, we're out of memory
 	if (bump_ptr + size > triggered_point){
+    printf("OKAY WE ARE REALLY OUT\n");
 		throw OutOfMemoryException(); 
 	}
 	//otherwise, we do have space to allocate...
 	int32_t bump_before_allocation = bump_ptr;
 	bump_ptr += size; // increment bump pointer by size allocated
 	
-	
+	printf("bump pointer is at %i, %i \n", bump_ptr, triggered_point);
 	return bump_before_allocation;
 }
 
 // This method should implement the actual semispace garbage collection.
 // As a final result this method *MUST* call print();
 void Heap::collect() {
-  int32_t current_mem = from;
-  for (std::map<std::string, obj_ptr>::iterator iter = root_set.begin(); iter != root_set.end(); ++iter){
-  	std::string var_name = iter->first;
-  	current_obj_address = iter->second;
-  	if (current_obj_address > heap_size/2){
-  		break; // stop when obj_pointer has a memory address greater than halfway point
-  	}
+  byte *current_mem = from;
+  for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
+    std::string var_name = iter->first;
+  	obj_ptr current_obj_address = iter->second;
+  	
+    printf("variable name is: %s, at memory address: %i \n", var_name.c_str(), current_obj_address);
+    //copy if root is alive
+    object_type obj_type = get_object_type(current_obj_address);
+    object_type *obj;
+    obj = global_address<object_type>(current_obj_address);
 
 
+    current_obj_address = bump_ptr;
+
+
+    switch(*obj){
+      case FOO:{
+        printf("this is a FOO obj\n"); 
+        bump_ptr += sizeof(Foo);
+        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        break;
+      }
+      case BAR:{
+        printf("this is a BAR obj\n");
+        bump_ptr += sizeof(Bar);
+        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        break;
+      }
+      case BAZ:{
+        printf("this is a BAZ obj\n");
+        bump_ptr += sizeof(Baz);
+        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        break;
+      }
+    }
+  printf("\n");
 
 
   }
   
 	// at the very end, we need to swap from and to labels...
-  /*
-	int32_t temp = from;
-	from = to;
-	to = temp;
-  */
+  printf("check to/from pointers before: %i,%i\n",*to,*from);
+	byte *tmp = from;
+  from = to;
+  to = tmp;
+	
+  printf("check to/from pointers: %i,%i\n",*to,*from);
+
   // Please do not remove the call to print, it has to be the final
   // operation in the method for your assignment to be graded.
   print();

@@ -1,4 +1,4 @@
 all:
-	${CXX} -std=c++11 main.cpp heap.cpp
+	${CXX} -std=c++11 -g main.cpp heap.cpp
 clean:
 	rm -f a.out
