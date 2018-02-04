@@ -32,17 +32,17 @@ void Heap::debug() {
 obj_ptr Heap::allocate(int32_t size) {
     // check we have space on heap
 	//if we don't, call collect()
-	int32_t triggered_point = heap_size/2;
-	if (bump_ptr + size > triggered_point){
+
+	if (bump_ptr + size > heap_size/2){
     //RESET BUMP POINTER
-    //bump_ptr = *to;
-    bump_ptr = heap_size/2;
-    //TODO: PLEASE FOR THE LOVE OF GOD CHANGE THIS
+    
+    bump_ptr = 0;
+
 		collect();
 	}
 	//check we have space on heap AGAIN
 	//if we still don't have space, we're out of memory
-	if (bump_ptr + size > triggered_point){
+	if (bump_ptr + size > heap_size/2){
     printf("OKAY WE ARE REALLY OUT\n");
 		throw OutOfMemoryException(); 
 	}
@@ -50,14 +50,14 @@ obj_ptr Heap::allocate(int32_t size) {
 	int32_t bump_before_allocation = bump_ptr;
 	bump_ptr += size; // increment bump pointer by size allocated
 	
-	printf("bump pointer is at %i, %i \n", bump_ptr, triggered_point);
+	printf("bump pointer is at %i, %i \n", bump_ptr, heap_size/2);
 	return bump_before_allocation;
 }
 
 // This method should implement the actual semispace garbage collection.
 // As a final result this method *MUST* call print();
 void Heap::collect() {
-  byte *current_mem = from;
+
   for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
     std::string var_name = iter->first;
   	obj_ptr current_obj_address = iter->second;
@@ -68,9 +68,7 @@ void Heap::collect() {
     object_type *obj;
     obj = global_address<object_type>(current_obj_address);
 
-
-    current_obj_address = bump_ptr;
-
+    current_obj_address = local_address(to) + bump_ptr;
 
     switch(*obj){
       case FOO:{
@@ -98,12 +96,12 @@ void Heap::collect() {
   }
   
 	// at the very end, we need to swap from and to labels...
-  printf("check to/from pointers before: %i,%i\n",*to,*from);
+  printf("check to/from pointers before: %p,%p\n",to,from);
 	byte *tmp = from;
   from = to;
   to = tmp;
 	
-  printf("check to/from pointers: %i,%i\n",*to,*from);
+  printf("check to/from pointers: %p,%p\n",to,from);
 
   // Please do not remove the call to print, it has to be the final
   // operation in the method for your assignment to be graded.
