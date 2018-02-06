@@ -68,25 +68,35 @@ void Heap::collect() {
     object_type *obj;
     obj = global_address<object_type>(current_obj_address);
 
-    current_obj_address = local_address(to) + bump_ptr;
+    int32_t abs_loc = abs(local_address(to));
+    if(local_address(to) < 0){
+      printf("%i\n",local_address(to));
+      //to = heap + bump_ptr;
+      
+    
+      abs_loc += local_address(heap);
+      printf("%i",abs_loc);
+    }
+
+    iter->second = abs_loc + bump_ptr;
 
     switch(*obj){
       case FOO:{
         printf("this is a FOO obj\n"); 
         bump_ptr += sizeof(Foo);
-        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
       case BAR:{
         printf("this is a BAR obj\n");
         bump_ptr += sizeof(Bar);
-        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
       case BAZ:{
         printf("this is a BAZ obj\n");
         bump_ptr += sizeof(Baz);
-        printf("%s now lives at %i\n", var_name.c_str(), current_obj_address);
+        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
     }
