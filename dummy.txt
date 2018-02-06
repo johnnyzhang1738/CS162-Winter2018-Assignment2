@@ -1,5 +1,9 @@
 x = Foo
+x.c = Bar
+x.d = Bar
 y = Bar
+y.c = Baz
+
 z = Baz
-a = Foo
-b = Bar
+z.c = Bar
+
