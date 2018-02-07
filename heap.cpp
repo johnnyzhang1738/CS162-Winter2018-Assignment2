@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <map>
+#include <stdio.h>
+#include <string.h>
 
 
 Heap::Heap(int32_t heap_size) : heap_size(heap_size), root_set() {
@@ -64,38 +66,34 @@ void Heap::collect() {
   	
     printf("variable name is: %s, at memory address: %i \n", var_name.c_str(), current_obj_address);
     //copy if root is alive
-    object_type obj_type = get_object_type(current_obj_address);
-    object_type *obj;
-    obj = global_address<object_type>(current_obj_address);
+    object_type type = get_object_type(current_obj_address);
+    object_type *obj = global_address<object_type>(current_obj_address);
 
 
-    int32_t abs_loc = abs(local_address(to));
-    if(local_address(to) < 0){
-      printf("%i\n",local_address(to));
-      //to = heap + bump_ptr;
-      
     
-      abs_loc += local_address(heap);
-      printf("%i",abs_loc);
-    }
-
-    iter->second = abs_loc + bump_ptr;
+    iter->second = bump_ptr;
+    byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
+    byte *old_loc = reinterpret_cast<byte*>(obj);
+    
 
     switch(*obj){
       case FOO:{
         printf("this is a FOO obj\n"); 
+        memcpy(new_loc, old_loc, sizeof(Foo));
         bump_ptr += sizeof(Foo);
         printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
       case BAR:{
         printf("this is a BAR obj\n");
+        memcpy(new_loc, old_loc, sizeof(Bar));
         bump_ptr += sizeof(Bar);
         printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
       case BAZ:{
         printf("this is a BAZ obj\n");
+        memcpy(new_loc, old_loc, sizeof(Baz));
         bump_ptr += sizeof(Baz);
         printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
