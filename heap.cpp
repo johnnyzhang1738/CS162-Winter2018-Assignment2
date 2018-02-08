@@ -60,6 +60,13 @@ obj_ptr Heap::allocate(int32_t size) {
 // As a final result this method *MUST* call print();
 void Heap::collect() {
 
+ for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
+    std::string var_name = iter->first;
+  	obj_ptr current_obj_address = iter->second;
+
+		Heap::collect_helper(current_obj_address);
+	}
+/*
   for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
     std::string var_name = iter->first;
   	obj_ptr current_obj_address = iter->second;
@@ -78,6 +85,7 @@ void Heap::collect() {
 
     switch(*obj){
       case FOO:{
+      	//go through descendents....
         printf("this is a FOO obj\n"); 
         memcpy(new_loc, old_loc, sizeof(Foo));
         bump_ptr += sizeof(Foo);
@@ -98,23 +106,70 @@ void Heap::collect() {
         printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
-    }
+    }*/
   printf("\n");
 
 
-  }
   
+  printf("Bump pointer after collection: %i\n", bump_ptr);
 	// at the very end, we need to swap from and to labels...
-  printf("check to/from pointers before: %p,%p\n",to,from);
+  //printf("check to/from pointers before: %p,%p\n",to,from);
 	byte *tmp = from;
   from = to;
   to = tmp;
 	
-  printf("check to/from pointers: %p,%p\n",to,from);
+  //printf("check to/from pointers: %p,%p\n",to,from);
 
   // Please do not remove the call to print, it has to be the final
   // operation in the method for your assignment to be graded.
   print();
+}
+
+void Heap::collect_helper(obj_ptr address_LOCAL){
+    object_type *obj = global_address<object_type>(address_LOCAL);
+
+    byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
+    byte *old_loc = reinterpret_cast<byte*>(obj);
+    
+   	
+  	switch(*obj){
+      case FOO:{
+      	//go through descendents....
+      	//foo is a pointer to an actual Foo object.
+      	auto *foo = global_address<Foo>(address_LOCAL);
+      	if (foo->c != NULL){
+      		//TODO: make sure C isn't already copied over
+      		bump_ptr += sizeof(Foo);
+      		collect_helper(foo->c);
+      	}
+      	
+        printf("this is a FOO obj\n"); 
+        memcpy(new_loc, old_loc, sizeof(Foo));
+        bump_ptr += sizeof(Foo);
+        
+
+        break;
+      }
+      case BAR:{
+      	auto *bar = global_address<Bar>(address_LOCAL);
+        printf("this is a BAR obj\n");
+        memcpy(new_loc, old_loc, sizeof(Bar));
+        bump_ptr += sizeof(Bar);
+        //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
+        break;
+      }
+      case BAZ:{
+      	auto *baz = global_address<Baz>(address_LOCAL);
+        printf("this is a BAZ obj\n");
+        memcpy(new_loc, old_loc, sizeof(Baz));
+        bump_ptr += sizeof(Baz);
+        //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
+        break;
+      }
+    }
+  	
+    
+    printf("\n");
 }
 
 obj_ptr Heap::get_root(const std::string& name) {
