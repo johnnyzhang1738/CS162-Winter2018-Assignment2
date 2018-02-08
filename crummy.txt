@@ -1,0 +1,6 @@
+x = Foo
+x.c = Bar
+x.d = Bar
+PRINT
+COLLECT
+

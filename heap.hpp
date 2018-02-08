@@ -126,7 +126,7 @@ public:
 
   // You should define collect in impl.cpp
   void    collect();
-  void collect_helper(obj_ptr address_LOCAL);
+  obj_ptr collect_helper(obj_ptr address_LOCAL);
   // You should optionally define debug in impl.cpp
   void    debug();
 

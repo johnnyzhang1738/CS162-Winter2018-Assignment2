@@ -38,7 +38,7 @@ obj_ptr Heap::allocate(int32_t size) {
 	if (bump_ptr + size > heap_size/2){
     //RESET BUMP POINTER
     
-    bump_ptr = 0;
+    //bump_ptr = 0;
 
 		collect();
 	}
@@ -59,7 +59,7 @@ obj_ptr Heap::allocate(int32_t size) {
 // This method should implement the actual semispace garbage collection.
 // As a final result this method *MUST* call print();
 void Heap::collect() {
-
+  bump_ptr = 0;
  for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
     std::string var_name = iter->first;
   	obj_ptr current_obj_address = iter->second;
@@ -125,7 +125,7 @@ void Heap::collect() {
   print();
 }
 
-void Heap::collect_helper(obj_ptr address_LOCAL){
+obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
     object_type *obj = global_address<object_type>(address_LOCAL);
 
     byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
@@ -137,11 +137,16 @@ void Heap::collect_helper(obj_ptr address_LOCAL){
       	//go through descendents....
       	//foo is a pointer to an actual Foo object.
       	auto *foo = global_address<Foo>(address_LOCAL);
-      	if (foo->c != NULL){
+      	if (foo->c != nil_ptr){
       		//TODO: make sure C isn't already copied over
-      		bump_ptr += sizeof(Foo);
-      		collect_helper(foo->c);
+      		//bump_ptr += sizeof(Foo);
+      		foo->c = collect_helper(foo->c);
       	}
+        
+        if (foo->d != nil_ptr){
+          //bump_ptr += sizeof(Foo);
+          foo->d = collect_helper(foo->d);
+        }
       	
         printf("this is a FOO obj\n"); 
         memcpy(new_loc, old_loc, sizeof(Foo));
@@ -170,6 +175,7 @@ void Heap::collect_helper(obj_ptr address_LOCAL){
   	
     
     printf("\n");
+    return local_address(new_loc);
 }
 
 obj_ptr Heap::get_root(const std::string& name) {
