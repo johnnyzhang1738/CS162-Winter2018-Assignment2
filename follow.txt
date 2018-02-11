@@ -1,3 +1,4 @@
 x = Foo
 y = x
-PRINT
+z = y
+COLLECT

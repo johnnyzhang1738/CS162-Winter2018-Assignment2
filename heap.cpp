@@ -61,24 +61,22 @@ obj_ptr Heap::allocate(int32_t size) {
 void Heap::collect() {
   bump_ptr = 0;
  for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
+    
     std::string var_name = iter->first;
   	obj_ptr current_obj_address = iter->second;
 
-		Heap::collect_helper(current_obj_address);
+		iter->second = Heap::collect_helper(current_obj_address);
+    //printf("placerholder");
 	}
 
   printf("\n");
 
-
-  
   printf("Bump pointer after collection: %i\n", bump_ptr);
 	// at the very end, we need to swap from and to labels...
   //printf("check to/from pointers before: %p,%p\n",to,from);
 	byte *tmp = from;
   from = to;
   to = tmp;
-	
-  //printf("check to/from pointers: %p,%p\n",to,from);
 
   // Please do not remove the call to print, it has to be the final
   // operation in the method for your assignment to be graded.
@@ -86,89 +84,72 @@ void Heap::collect() {
 }
 
 obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
-	/*
-	if (address_LOCAL > to){
-		return address_LOCAL;
-	}*/
-    object_type *obj = global_address<object_type>(address_LOCAL);
+  object_type *obj = global_address<object_type>(address_LOCAL);
 
-    byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
-    byte *old_loc = reinterpret_cast<byte*>(obj);
-    
-   	
-  	switch(*obj){
-      case FOO:{
-      	printf("this is a FOO obj\n"); 
-        memcpy(new_loc, old_loc, sizeof(Foo));
-        bump_ptr += sizeof(Foo);
+  byte *new_loc = reinterpret_cast<byte*>(to+bump_ptr);
+  byte *old_loc = reinterpret_cast<byte*>(obj);
+ 	
+	switch(*obj){
+    case FOO:{
+    	printf("this is a FOO obj\n"); 
+      memcpy(new_loc, old_loc, sizeof(Foo));
+      bump_ptr += sizeof(Foo);
+      //foo is a pointer to an actual Foo object.
+    	auto *foo = global_address<Foo>(address_LOCAL);
+      foo->type = MOVED;
 
-
-      	//go through descendents....
-      	//foo is a pointer to an actual Foo object.
-      	auto *foo = global_address<Foo>(address_LOCAL);
-
-        foo->type = MOVED;
-
-      	if (foo->c != nil_ptr){
-      		//TODO: make sure C isn't already copied over
-      		//bump_ptr += sizeof(Foo);
-      		foo->c = collect_helper(foo->c);
-      	}
-        
-        if (foo->d != nil_ptr){
-          //bump_ptr += sizeof(Foo);
-          foo->d = collect_helper(foo->d);
-        }
-
-        break;
+    	if (foo->c != nil_ptr){
+    		foo->c = collect_helper(foo->c);
+    	}
+      if (foo->d != nil_ptr){
+        foo->d = collect_helper(foo->d);
       }
-      case BAR:{
-      
-        printf("this is a BAR obj\n");
-        memcpy(new_loc, old_loc, sizeof(Bar));
-        bump_ptr += sizeof(Bar);
-        auto *bar = global_address<Bar>(address_LOCAL);
-      	if (bar->c != nil_ptr){
-      		//TODO: make sure C isn't already copied over
-      		//bump_ptr += sizeof(Foo);
-      		bar->c = collect_helper(bar->c);
-      	}
-        
-        if (bar->f != nil_ptr){
-          //bump_ptr += sizeof(Foo);
-          bar->f = collect_helper(bar->f);
-        }
-        //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
-        break;
-      }
-      case BAZ:{
-      	
-        printf("this is a BAZ obj\n");
-        memcpy(new_loc, old_loc, sizeof(Baz));
-        bump_ptr += sizeof(Baz);
-        auto *baz = global_address<Baz>(address_LOCAL);
-      	if (baz->b != nil_ptr){
-      		//TODO: make sure C isn't already copied over
-      		//bump_ptr += sizeof(Foo);
-      		baz->b = collect_helper(baz->b);
-      	}
-        
-        if (baz->c != nil_ptr){
-          //bump_ptr += sizeof(Foo);
-          baz->c = collect_helper(baz->c);
-        }
-        //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
-        break;
-      }
-      case MOVED:{
-        return local_address(old_loc);
 
-      }
+      break;
     }
-  	
-    
-    printf("\n");
-    return local_address(new_loc);
+    case BAR:{
+      printf("this is a BAR obj\n");
+      memcpy(new_loc, old_loc, sizeof(Bar));
+      bump_ptr += sizeof(Bar);
+
+      auto *bar = global_address<Bar>(address_LOCAL);
+      bar->type = MOVED;
+
+    	if (bar->c != nil_ptr){
+    		bar->c = collect_helper(bar->c);
+    	}
+      
+      if (bar->f != nil_ptr){
+        bar->f = collect_helper(bar->f);
+      }
+      break;
+    }
+    case BAZ:{
+      printf("this is a BAZ obj\n");
+      memcpy(new_loc, old_loc, sizeof(Baz));
+      bump_ptr += sizeof(Baz);
+
+      auto *baz = global_address<Baz>(address_LOCAL);
+      baz->type = MOVED;
+
+    	if (baz->b != nil_ptr){
+    		baz->b = collect_helper(baz->b);
+    	}
+      
+      if (baz->c != nil_ptr){
+        baz->c = collect_helper(baz->c);
+      }
+      break;
+    }
+    case MOVED:{
+      //byte *already_in_from = reinterpret_cast<byte*>(to+obj);
+      //return local_address(already_in_from);
+      return local_address(old_loc);
+    }
+  }
+	
+  printf("\n");
+  return local_address(old_loc);
 }
 
 obj_ptr Heap::get_root(const std::string& name) {

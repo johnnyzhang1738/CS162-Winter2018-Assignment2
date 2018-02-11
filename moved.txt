@@ -1,6 +1,6 @@
 x = Foo
 x.c = Foo
+x.c = NULL
 
-y = x.c
+y = Bar
 COLLECT
-PRINT
