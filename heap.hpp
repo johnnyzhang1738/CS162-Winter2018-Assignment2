@@ -22,7 +22,7 @@ static const obj_ptr nil_ptr(-1);
 // The object type tag will always be a single byte in size.
 // 
 enum object_type : byte {
-  FOO, BAR, BAZ
+  FOO, BAR, BAZ, MOVED
 };
 
 // There are three possible objects we can allocate on the heap,

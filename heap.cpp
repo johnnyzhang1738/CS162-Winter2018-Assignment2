@@ -66,47 +66,7 @@ void Heap::collect() {
 
 		Heap::collect_helper(current_obj_address);
 	}
-/*
-  for (auto iter = root_set.begin(); iter != root_set.end(); ++iter){
-    std::string var_name = iter->first;
-  	obj_ptr current_obj_address = iter->second;
-  	
-    printf("variable name is: %s, at memory address: %i \n", var_name.c_str(), current_obj_address);
-    //copy if root is alive
-    object_type type = get_object_type(current_obj_address);
-    object_type *obj = global_address<object_type>(current_obj_address);
 
-
-    
-    iter->second = bump_ptr;
-    byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
-    byte *old_loc = reinterpret_cast<byte*>(obj);
-    
-
-    switch(*obj){
-      case FOO:{
-      	//go through descendents....
-        printf("this is a FOO obj\n"); 
-        memcpy(new_loc, old_loc, sizeof(Foo));
-        bump_ptr += sizeof(Foo);
-        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
-        break;
-      }
-      case BAR:{
-        printf("this is a BAR obj\n");
-        memcpy(new_loc, old_loc, sizeof(Bar));
-        bump_ptr += sizeof(Bar);
-        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
-        break;
-      }
-      case BAZ:{
-        printf("this is a BAZ obj\n");
-        memcpy(new_loc, old_loc, sizeof(Baz));
-        bump_ptr += sizeof(Baz);
-        printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
-        break;
-      }
-    }*/
   printf("\n");
 
 
@@ -126,6 +86,10 @@ void Heap::collect() {
 }
 
 obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
+	/*
+	if (address_LOCAL > to){
+		return address_LOCAL;
+	}*/
     object_type *obj = global_address<object_type>(address_LOCAL);
 
     byte *new_loc = reinterpret_cast<byte*>(to + bump_ptr);
@@ -134,9 +98,17 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
    	
   	switch(*obj){
       case FOO:{
+      	printf("this is a FOO obj\n"); 
+        memcpy(new_loc, old_loc, sizeof(Foo));
+        bump_ptr += sizeof(Foo);
+
+
       	//go through descendents....
       	//foo is a pointer to an actual Foo object.
       	auto *foo = global_address<Foo>(address_LOCAL);
+
+        foo->type = MOVED;
+
       	if (foo->c != nil_ptr){
       		//TODO: make sure C isn't already copied over
       		//bump_ptr += sizeof(Foo);
@@ -147,29 +119,50 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
           //bump_ptr += sizeof(Foo);
           foo->d = collect_helper(foo->d);
         }
-      	
-        printf("this is a FOO obj\n"); 
-        memcpy(new_loc, old_loc, sizeof(Foo));
-        bump_ptr += sizeof(Foo);
-        
 
         break;
       }
       case BAR:{
-      	auto *bar = global_address<Bar>(address_LOCAL);
+      
         printf("this is a BAR obj\n");
         memcpy(new_loc, old_loc, sizeof(Bar));
         bump_ptr += sizeof(Bar);
+        auto *bar = global_address<Bar>(address_LOCAL);
+      	if (bar->c != nil_ptr){
+      		//TODO: make sure C isn't already copied over
+      		//bump_ptr += sizeof(Foo);
+      		bar->c = collect_helper(bar->c);
+      	}
+        
+        if (bar->f != nil_ptr){
+          //bump_ptr += sizeof(Foo);
+          bar->f = collect_helper(bar->f);
+        }
         //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
       }
       case BAZ:{
-      	auto *baz = global_address<Baz>(address_LOCAL);
+      	
         printf("this is a BAZ obj\n");
         memcpy(new_loc, old_loc, sizeof(Baz));
         bump_ptr += sizeof(Baz);
+        auto *baz = global_address<Baz>(address_LOCAL);
+      	if (baz->b != nil_ptr){
+      		//TODO: make sure C isn't already copied over
+      		//bump_ptr += sizeof(Foo);
+      		baz->b = collect_helper(baz->b);
+      	}
+        
+        if (baz->c != nil_ptr){
+          //bump_ptr += sizeof(Foo);
+          baz->c = collect_helper(baz->c);
+        }
         //printf("%s now lives at %i\n", iter->first.c_str(), iter->second);
         break;
+      }
+      case MOVED:{
+        return local_address(old_loc);
+
       }
     }
   	
@@ -193,13 +186,20 @@ object_type Heap::get_object_type(obj_ptr ptr) {
 
 // Finds fields by path / name; used by get() and set().
 obj_ptr *Heap::get_nested(const std::vector<std::string>& path) {
+  std::string current = path.at(0);
   obj_ptr init = get_root(path[0]);
   obj_ptr *fld = &init;
 
-  for(int i = 1; i < path.size(); ++i) {
+  for(size_t i = 1; i < path.size(); ++i) {
+    if(*fld == nil_ptr) {
+      std::string message("Nil pointer while getting: ");
+      throw std::runtime_error(message + current);
+    }
+
     auto addr = *fld;
-    auto type = *reinterpret_cast<object_type*>(global_address<object_type>(addr));
+    auto type = get_object_type(addr);
     auto seg  = path[i];
+    current  += "." + seg;
 
     switch(type) {
     case FOO: {
@@ -222,6 +222,10 @@ obj_ptr *Heap::get_nested(const std::vector<std::string>& path) {
       else if(seg == "c") fld = &baz->c;
       else throw std::runtime_error("No such field: Baz." + seg);
       break;
+    }
+    default: {
+      std::string message("Unknown object type while getting: ");
+      throw std::runtime_error(message + std::to_string(int(type)));
     }}
   }
 
@@ -266,34 +270,40 @@ obj_ptr Heap::new_baz() {
 }
 
 void Heap::print() {
-  byte *position = from;
-  std::map<int32_t, const char*> objects;
+  obj_ptr position = 0;
+  typedef std::pair<obj_ptr,const char*> pair;
+  std::vector<pair> objects;
 
-  while(position < (from + heap_size / 2) && position < (from + bump_ptr)) {
-    object_type type = *reinterpret_cast<object_type*>(position);
+  while(position < heap_size / 2 && position < bump_ptr) {
+    object_type type = get_object_type(position);
     switch(type) {
       case FOO: {
-        auto obj = reinterpret_cast<Foo*>(position);
-        objects[obj->id] = "Foo";
+        auto obj = global_address<Foo>(position);
+        objects.push_back(pair(obj->id, "Foo"));
         position += sizeof(Foo);
         break;
       }
       case BAR: {
-        auto obj = reinterpret_cast<Bar*>(position);
-        objects[obj->id] = "Bar";
+        auto obj = global_address<Bar>(position);
+        objects.push_back(pair(obj->id, "Bar"));
         position += sizeof(Bar);
         break;
       }
       case BAZ: {
-        auto obj = reinterpret_cast<Baz*>(position);
-        objects[obj->id] = "Baz";
+        auto obj = global_address<Baz>(position);
+        objects.push_back(pair(obj->id, "Baz"));
         position += sizeof(Baz);
         break;
+      }
+      default: {
+        std::string message("Unknown object type while printing: ");
+        throw std::runtime_error(message + std::to_string(int(type)));
       }
     }
   }
 
   std::cout << "Objects in from-space:\n";
+  std::sort(objects.begin(), objects.end());
   for(auto const& itr: objects) {
     std::cout << " - " << itr.first << ':' << itr.second << '\n';
   }

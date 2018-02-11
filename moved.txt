@@ -1,0 +1,6 @@
+x = Foo
+x.c = Foo
+
+y = x.c
+COLLECT
+PRINT

@@ -9,9 +9,11 @@
 
 #include "heap.hpp"
 
-// Removes spaces from a string (in place).
+// Removes spaces and comments from a string (in place).
 // Based on https://stackoverflow.com/a/83481
-void strip_whitespace(std::string& input) {
+void clean(std::string& input) {
+  auto pos = input.find('#');
+  if(pos != std::string::npos) input.resize(pos);
   auto end = std::remove(input.begin(), input.end(), ' ');
   input.erase(end, input.end());
 }
@@ -55,15 +57,11 @@ int main(int argc, char *argv[]) {
   }
 
   Heap heap(size);
-
-  while(true) {
-    std::string line;
-    std::getline(std::cin, line);
-    if(std::cin.eof()) return 0;
-
-    strip_whitespace(line);
-    if(line.length() == 0 || line[0] == '#') {
-      // Blank or a comment; skip it.
+  std::string line;
+  while(std::getline(std::cin, line)) {
+    clean(line);
+    if(line.length() == 0) {
+      // These are not the lines you're looking for.
       continue;
     }
 
@@ -80,7 +78,7 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
-    int pos = line.find('=');
+    auto pos = line.find('=');
     if(pos == std::string::npos) {
       std::cerr << "Bad command: " << line << '\n';
       continue;
