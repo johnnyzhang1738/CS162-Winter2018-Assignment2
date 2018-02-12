@@ -1,5 +1,5 @@
 #include "heap.hpp"
-
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <stdio.h>
@@ -45,14 +45,14 @@ obj_ptr Heap::allocate(int32_t size) {
 	//check we have space on heap AGAIN
 	//if we still don't have space, we're out of memory
 	if (bump_ptr + size > heap_size/2){
-    printf("OKAY WE ARE REALLY OUT\n");
+    //printf("OKAY WE ARE REALLY OUT\n");
 		throw OutOfMemoryException(); 
 	}
 	//otherwise, we do have space to allocate...
 	int32_t bump_before_allocation = bump_ptr;
 	bump_ptr += size; // increment bump pointer by size allocated
 	
-	printf("bump pointer is at %i, %i \n", bump_ptr, heap_size/2);
+	//printf("bump pointer is at %i, %i \n", bump_ptr, heap_size/2);
 	return bump_before_allocation;
 }
 
@@ -69,9 +69,9 @@ void Heap::collect() {
     //printf("placerholder");
 	}
 
-  printf("\n");
+  //printf("\n");
 
-  printf("Bump pointer after collection: %i\n", bump_ptr);
+  //printf("Bump pointer after collection: %i\n", bump_ptr);
 	// at the very end, we need to swap from and to labels...
   //printf("check to/from pointers before: %p,%p\n",to,from);
 	byte *tmp = from;
@@ -91,7 +91,7 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
  	
 	switch(*obj){
     case FOO:{
-    	printf("this is a FOO obj\n"); 
+    	//printf("this is a FOO obj\n"); 
       memcpy(new_loc, old_loc, sizeof(Foo));
       bump_ptr += sizeof(Foo);
       //foo is a pointer to an actual Foo object.
@@ -108,7 +108,7 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
       break;
     }
     case BAR:{
-      printf("this is a BAR obj\n");
+      //printf("this is a BAR obj\n");
       memcpy(new_loc, old_loc, sizeof(Bar));
       bump_ptr += sizeof(Bar);
 
@@ -125,7 +125,7 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
       break;
     }
     case BAZ:{
-      printf("this is a BAZ obj\n");
+     // printf("this is a BAZ obj\n");
       memcpy(new_loc, old_loc, sizeof(Baz));
       bump_ptr += sizeof(Baz);
 
@@ -148,7 +148,7 @@ obj_ptr Heap::collect_helper(obj_ptr address_LOCAL){
     }
   }
 	
-  printf("\n");
+  //printf("\n");
   return local_address(old_loc);
 }
 

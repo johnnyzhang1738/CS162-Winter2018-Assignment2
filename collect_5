@@ -1,0 +1,5 @@
+x = Foo
+y = Baz
+z = Bar
+x = z
+COLLECT

@@ -1,0 +1,6 @@
+x = Foo
+x.c = Bar
+y = Baz
+y.c = Bar
+y.c = x
+COLLECT
